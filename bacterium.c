@@ -52,7 +52,7 @@ char** init(int *length, int *width, FILE* input){
     for( int i = 0 ; i < *length; ++i ){
         for(int j = 0 ; j < *width; ++j ){
             char ch = fgetc(input);
-            while (ch == '\n' || ch == '\r' || ch == ' ' || ch == '\t'){
+            while (ch == '\n' || ch == '\r'){
                 ch = fgetc(input);
             }
             a[i][j] = ch;
