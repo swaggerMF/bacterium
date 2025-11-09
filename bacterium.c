@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <string.h>
+#include <time.h>
 
 int x[8] = {1,0,-1,0,1,-1,1,-1};
 int y[8] = {0,1,0,-1,-1,1,1,-1};
@@ -217,26 +218,57 @@ int main(int argc, char** argv){
     }
     printf("Please choose the mode you want to run in:\n\n1.DEBUG MODE\n2.NORMAL MODE\n\n");
     scanf("%d", &mode);
+
     int length, width;
     int generations = atoi(argv[2]);
     parallel_generations = generations;
     int n_threads = atoi(argv[3]);
     thread_count = n_threads;
+
+
     char **a_serial = NULL;
     a_serial = init(&length,&width,f_input);
     char **next_a_serial = alloc_matrix(length,width);
+
+
     parallel_a = alloc_matrix(length,width);
     parallel_next_a = alloc_matrix(length,width);
     copy_matrix(parallel_a, a_serial,length,width);
+
+    struct timespec start, finish;
+    double elapsed_serial, elapsed_parallel;
+    clock_gettime(CLOCK_MONOTONIC,&start);
+
     generations_serial(a_serial,next_a_serial,generations,length,width);
+
+    clock_gettime(CLOCK_MONOTONIC,&finish);
+
+    elapsed_serial = (finish.tv_sec - start.tv_sec);
+    elapsed_serial += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+
+    if(mode == 2 ){
+        printf("Serial time: %f\n",elapsed_serial);
+    }
     show_matrix_in_file(a_serial,length,width,f_serial);
+
+    clock_gettime(CLOCK_MONOTONIC,&start);
     generations_parallel(parallel_a,generations,length,width);
+    clock_gettime(CLOCK_MONOTONIC,&finish);
+
+    elapsed_parallel = (finish.tv_sec - start.tv_sec);
+    elapsed_parallel += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+
+    if(mode == 2 ){
+        printf("Parallel time: %f\n",elapsed_parallel);
+    }
     show_matrix_in_file(parallel_a,length,width,f_parallel);
 
     
-
-    if(check_serial_vs_parallel(a_serial,parallel_a,length,width)) printf("Parallel and serial output are the same");
+    if(check_serial_vs_parallel(a_serial,parallel_a,length,width)) printf("Parallel and serial output are the same\n\n");
     else printf("Parallel and serial output is NOT the same");
+    if(mode == 2){
+        printf("Speedup: %f", elapsed_serial/elapsed_parallel);
+    }
     free_matrix(parallel_a, length);
     free_matrix(a_serial, length);
     free_matrix(next_a_serial,length);
