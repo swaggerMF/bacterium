@@ -119,7 +119,7 @@ void generations_serial(char**a, char** next_a, int generations, int length, int
                     if(a[i+y[k]][j+x[k]] == 'X') neighbours++;
                 }
                 if( a[i][j] == '.' && neighbours == 3 ) next_a[i][j] = 'X';
-                else if(a[i][j] == 'X' && neighbours < 2 || neighbours > 3) next_a[i][j] = '.';
+                else if(a[i][j] == 'X' && (neighbours < 2 || neighbours > 3)) next_a[i][j] = '.';
                 else next_a[i][j] = a[i][j];
             }
         }
@@ -137,14 +137,15 @@ void* generations_parallel_worker(void* rank){
     int my_rank = *(int*)rank;
     int rows_per_thread = parallel_length/thread_count;
     int remainder_rows = parallel_length%thread_count;
-    int actual_rows = rows_per_thread;
-    if(my_rank < remainder_rows)
-        actual_rows += 1;
-    int start_index = my_rank * rows_per_thread;
-    if( my_rank < remainder_rows){
-        start_index += my_rank;
+    int actual_rows;
+    int start_index;
+    if (my_rank < remainder_rows) {
+        actual_rows = rows_per_thread + 1;
+        start_index = my_rank * actual_rows;
+    } else {
+        actual_rows = rows_per_thread;
+        start_index = my_rank * rows_per_thread + remainder_rows;
     }
-    else start_index += remainder_rows;
     int end_index = start_index + actual_rows;
     for(int g = 0 ; g < parallel_generations; ++g){
         for(int i = start_index ; i < end_index; ++i ){
@@ -155,7 +156,7 @@ void* generations_parallel_worker(void* rank){
                     if(parallel_a[i+y[k]][j+x[k]] == 'X') neighbours++;
                 }
                 if( parallel_a[i][j] == '.' && neighbours == 3 ) parallel_next_a[i][j] = 'X';
-                else if(parallel_a[i][j] == 'X' && neighbours < 2 || neighbours > 3) parallel_next_a[i][j] = '.';
+                else if(parallel_a[i][j] == 'X' && (neighbours < 2 || neighbours > 3)) parallel_next_a[i][j] = '.';
                 else parallel_next_a[i][j] = parallel_a[i][j];
             }
             
@@ -192,6 +193,7 @@ void generations_parallel(char **a, int generations, int length, int width){
         pthread_join(threads[i],NULL);
     }
     pthread_barrier_destroy(&my_barrier);
+    free(tid);
     //printf("The colony after %d parallel generations looks like this:\n\n",parallel_generations);
     
 }
